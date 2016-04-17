@@ -10,7 +10,8 @@ def read_csv(csv_filename):
     return np.array(data)
 
 
-def read_timestamp(label_filename):
+def read_timestamp():
+    label_filename = 'utt1.lab'
     label_file = open(label_filename)
     label_timestamp = []
     for line in label_file:
@@ -89,28 +90,17 @@ def mix_vectors(vectors):
     return np.array(mixed)
 
 
-def gen_traj(mcep_filename, dur_filename, label_filename):
+def gen_traj(mcep_filename, dur_filename):
     print 'generating trajectory using mel-cepstrum and duration expert ...'
 
-    # read mel-cepstrum expert
+    # read mean and var form the mel-cepstrum expert file
     mcep = read_mcep(mcep_filename)
 
-    # read duration expert
+    # read mean and var form the duration expert file
     dur = read_dur(dur_filename)
 
-    # read label
-    label = read_timestamp(label_filename)
-
     state_num = 5   # number of states
-    dur_state_mean = []
-
-    # ensure that the number the frames for state experts add up to the phone durations
-    for i in range(len(label)):
-        duration = float(label[i]['end'] - label[i]['start']) / 10000000 / 5 * 1000
-        frame_num = float(np.sum(dur['state-means'][i, :]))
-        dur_state_mean.append(dur['state-means'][i, :] * (duration / frame_num))
-    dur_state_mean = np.array(dur_state_mean)
-    dur_state_mean = np.around(dur_state_mean).astype(int) # convert duration to int
+    dur_state_mean = np.around(dur['state-means']).astype(int) # round duration to int
 
     # repeat expt according to dur
     static_mean = repeat_expt(mcep['static-mean'], dur_state_mean, state_num)
@@ -238,7 +228,7 @@ def main():
     traj_names.append('syn-provided')
 
     # 3.3.1
-    mean_q, cov_q, mean_bar, cov_bar, W = gen_traj('expts/utt1.cmp.expt', 'expts/utt1.dur.expt', 'utt1_original.lab')
+    mean_q, cov_q, mean_bar, cov_bar, W = gen_traj('expts/utt1.cmp.expt', 'expts/utt1.dur.expt')
     trajs.append(mean_q)
     traj_names.append('syn')
 
