@@ -1,4 +1,4 @@
-import csv
+import csv, time
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -177,11 +177,11 @@ def read_gv(gv_filename):
     return gv
 
 
-def add_gv_expert(mean_q, mean_bar, cov_bar, W, gv_filename, iteration):
+def add_gv_expert(mean_q, mean_bar, cov_bar, W, gv_filename, iteration, dim):
     print 'adding global variance expert to the trajctory ...'
 
     gv = read_gv(gv_filename)                       # read global variance
-    gv_mean, gv_var = gv['mean'][3], gv['var'][3]   # fetch the 4th dim
+    gv_mean, gv_var = gv['mean'][dim - 1], gv['var'][dim - 1]   # fetch the d-th dim
 
     C = mean_q.copy()
     M = mean_bar            # mixed mean of static, delta, delta-delta
@@ -197,7 +197,7 @@ def add_gv_expert(mean_q, mean_bar, cov_bar, W, gv_filename, iteration):
         v_prime = -2 / T * p_v * (v_C - gv_mean) * (C - c_bar)
         delta_C = w * (-W.T.dot(cov_bar_inv).dot(W).dot(C) + W.T.dot(cov_bar_inv).dot(M)) + v_prime
         C += alpha * delta_C
-        if i % 10 == 0:
+        if i % 5 == 0:
             print '{i} iterations finished'.format(i=i+1)
 
     return C
@@ -228,22 +228,24 @@ def main():
     traj_names = []
 
     # original
-    origin = read_csv('mcep_original.csv')
+    origin = read_csv('mcep_original-4-utt3.csv')
     trajs.append(origin)
     traj_names.append('original')
 
     # provided system
-    syn = read_csv('mcep_syn.csv')
+    syn = read_csv('mcep_syn-4-utt3.csv')
     trajs.append(syn)
     traj_names.append('syn-provided')
 
     # 3.3.1
-    mean_q, cov_q, mean_bar, cov_bar, W = gen_traj('expts/utt1.cmp.expt', 'expts/utt1.dur.expt', 'utt1_original.lab')
+    t1 = time.time()
+    mean_q, cov_q, mean_bar, cov_bar, W = gen_traj('expts-4-utt3/utt3.cmp.expt', 'expts-4-utt3/utt3.dur.expt', 'lab_original/utt3.lab')
+    print time.time() - t1
     trajs.append(mean_q)
     traj_names.append('syn')
 
     # 3.3.2 (a)
-    C = add_gv_expert(mean_q, mean_bar, cov_bar, W, 'expts/utt1.gv.expt', 250)
+    C = add_gv_expert(mean_q, mean_bar, cov_bar, W, 'expts/utt1.gv.expt', 50, 4)
     trajs.append(C)
     traj_names.append('syn-gv-expert')
 
@@ -255,7 +257,7 @@ def main():
         traj_names.append('syn-gv-constriant')
 
     # plot all trajctories
-    plot_trajs(trajs, traj_names, 'utt1_traj_dim-4.png')
+    plot_trajs(trajs, traj_names, 'utt1_traj_dim-4-utt3.png')
 
 
 if __name__ == '__main__':
